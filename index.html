@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ГОРОД — Тайная роль</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+            radial-gradient(circle at top, #211d18 0%, #0b0b0b 45%, #050505 100%);
+        color: #eeeeee;
+        font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 600px;
+        margin: auto;
+        padding: 25px 18px 60px;
+    }
+
+    .logo {
+        text-align: center;
+        color: #aaa;
+        letter-spacing: 6px;
+        font-size: 12px;
+        margin: 15px 0 35px;
+    }
+
+    .card {
+        background: rgba(15, 15, 15, 0.96);
+        border: 1px solid #292929;
+        padding: 30px 24px;
+        box-shadow: 0 20px 70px rgba(0,0,0,.65);
+    }
+
+    h1 {
+        text-align: center;
+        font-weight: normal;
+        font-size: 32px;
+        margin: 0 0 12px;
+        letter-spacing: 2px;
+    }
+
+    h2 {
+        text-align: center;
+        font-weight: normal;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #999;
+        line-height: 1.6;
+        margin-bottom: 28px;
+    }
+
+    label {
+        display: block;
+        color: #aaa;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    select,
+    button {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 14px;
+        font-family: inherit;
+        font-size: 16px;
+    }
+
+    select {
+        background: #090909;
+        color: white;
+        border: 1px solid #333;
+    }
+
+    button {
+        border: none;
+        background: #e2d7c2;
+        color: #111;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    button:hover {
+        background: #f0e7d7;
+    }
+
+    .secondary {
+        background: #151515;
+        color: #ddd;
+        border: 1px solid #333;
+    }
+
+    .player-link {
+        border-top: 1px solid #292929;
+        padding: 18px 0;
+    }
+
+    .player-title {
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+
+    .link {
+        color: #888;
+        font-family: monospace;
+        font-size: 11px;
+        word-break: break-all;
+        line-height: 1.5;
+    }
+
+    .copy-button {
+        margin-top: 9px;
+        padding: 10px;
+        font-size: 13px;
+        background: #191919;
+        color: #ddd;
+        border: 1px solid #333;
+    }
+
+    .role-screen {
+        text-align: center;
+    }
+
+    .player-number {
+        color: #777;
+        font-size: 13px;
+        letter-spacing: 2px;
+    }
+
+    .role-name {
+        font-size: 36px;
+        letter-spacing: 3px;
+        margin: 25px 0;
+    }
+
+    .role-description {
+        color: #bbb;
+        line-height: 1.7;
+        font-size: 16px;
+    }
+
+    .warning {
+        color: #777;
+        font-size: 12px;
+        line-height: 1.5;
+        margin-top: 25px;
+    }
+
+    .hidden-role {
+        text-align: center;
+        color: #aaa;
+        line-height: 1.7;
+    }
+
+    .success {
+        color: #aaa;
+        text-align: center;
+        line-height: 1.6;
+    }
+
+    .back {
+        margin-top: 20px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo">
+        ГОРОД • ТАЙНАЯ РОЛЬ
+    </div>
+
+    <div id="app"></div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   РОЛИ
+========================================================= */
+
+const ROLES = {
+
+    mafia: {
+        name: "МАФИЯ",
+
+        description:
+        "Этой ночью вы будете охотиться вместе со своей командой. " +
+        "Найдите свою команду, договоритесь о жертве и сделайте свой выбор. " +
+        "Ваша цель — уничтожить город раньше, чем город уничтожит вас."
+    },
+
+    doctor: {
+        name: "ДОКТОР",
+
+        description:
+        "Каждую ночь вы выбираете одного живого игрока и пытаетесь его спасти. " +
+        "Нельзя лечить одного человека две ночи подряд. " +
+        "Себя можно лечить только один раз за игру. " +
+        "Вы не узнаете, получилось ли спасение."
+    },
+
+    commissioner: {
+        name: "КОМИССАР",
+
+        description:
+        "Каждую ночь вы проверяете одного живого игрока. " +
+        "Ведущая сообщит вам только одно: «МАФИЯ» или «НЕ МАФИЯ». " +
+        "Ваша задача — найти мафию и убедить город избавиться от неё, " +
+        "не выдав себя слишком рано."
+    },
+
+    civilian: {
+        name: "МИРНЫЙ ЖИТЕЛЬ",
+
+        description:
+        "У вас нет ночного действия. " +
+        "Ваше главное оружие — разговор, наблюдательность и способность понимать, " +
+        "кому здесь нельзя доверять. " +
+        "Найдите мафию раньше, чем она найдёт вас."
+    }
+
+};
+
+
+/* =========================================================
+   ПОЛУЧЕНИЕ НАБОРА РОЛЕЙ
+========================================================= */
+
+function getRoles(playerCount) {
+
+    let roles = [];
+
+    if (playerCount === 8) {
+
+        roles = [
+            "mafia",
+            "mafia",
+            "commissioner",
+            "doctor",
+            "civilian",
+            "civilian",
+            "civilian",
+            "civilian"
+        ];
+
+    }
+
+    if (playerCount === 9) {
+
+        roles = [
+            "mafia",
+            "mafia",
+            "mafia",
+            "commissioner",
+            "doctor",
+            "civilian",
+            "civilian",
+            "civilian",
+            "civilian"
+        ];
+
+    }
+
+    if (playerCount === 10) {
+
+        roles = [
+            "mafia",
+            "mafia",
+            "mafia",
+            "commissioner",
+            "doctor",
+            "civilian",
+            "civilian",
+            "civilian",
+            "civilian",
+            "civilian"
+        ];
+
+    }
+
+    return shuffle(roles);
+}
+
+
+/* =========================================================
+   ПЕРЕМЕШИВАНИЕ
+========================================================= */
+
+function shuffle(array) {
+
+    const result = [...array];
+
+    for (let i = result.length - 1; i > 0; i--) {
+
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [result[i], result[j]] =
+        [result[j], result[i]];
+
+    }
+
+    return result;
+}
+
+
+/* =========================================================
+   КОДИРОВАНИЕ СЕКРЕТНОЙ ССЫЛКИ
+========================================================= */
+
+function encodeData(data) {
+
+    return btoa(
+        unescape(
+            encodeURIComponent(
+                JSON.stringify(data)
+            )
+        )
+    )
+    .replace(/=/g, "");
+}
+
+
+function decodeData(data) {
+
+    try {
+
+        return JSON.parse(
+            decodeURIComponent(
+                escape(
+                    atob(data)
+                )
+            )
+        );
+
+    } catch {
+
+        return null;
+
+    }
+
+}
+
+
+/* =========================================================
+   ГЛАВНЫЙ ЭКРАН
+========================================================= */
+
+function showHome() {
+
+    document.getElementById("app").innerHTML = `
+
+        <div class="card">
+
+            <h1>ГОРОД</h1>
+
+            <div class="subtitle">
+
+                Здесь начинается ваша игра.
+
+                <br><br>
+
+                Создайте новую партию
+                и раздайте каждому игроку
+                его тайную роль.
+
+            </div>
+
+
+            <label>
+                Количество игроков
+            </label>
+
+
+            <select id="playerCount">
+
+                <option value="8">
+                    8 игроков
+                </option>
+
+                <option value="9">
+                    9 игроков
+                </option>
+
+                <option value="10">
+                    10 игроков
+                </option>
+
+            </select>
+
+
+            <button onclick="createGame()">
+
+                СОЗДАТЬ ИГРУ
+
+            </button>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   СОЗДАНИЕ ИГРЫ
+========================================================= */
+
+function createGame() {
+
+    const count =
+        Number(
+            document.getElementById("playerCount").value
+        );
+
+
+    const roles =
+        getRoles(count);
+
+
+    let html = `
+
+        <div class="card">
+
+            <h1>РОЛИ ГОТОВЫ</h1>
+
+            <div class="subtitle">
+
+                Отправь каждому игроку
+                только его ссылку.
+
+                <br>
+
+                Не открывай ссылки
+                при остальных игроках.
+
+            </div>
+
+    `;
+
+
+    roles.forEach((role, index) => {
+
+        const playerNumber =
+            index + 1;
+
+
+        const data = {
+
+            player: playerNumber,
+
+            role: role
+
+        };
+
+
+        const token =
+            encodeData(data);
+
+
+        const url =
+            window.location.href.split("#")[0]
+            + "#"
+            + token;
+
+
+        html += `
+
+            <div class="player-link">
+
+                <div class="player-title">
+
+                    Игрок ${playerNumber}
+
+                </div>
+
+
+                <div class="link">
+
+                    ${url}
+
+                </div>
+
+
+                <button
+                    class="copy-button"
+                    onclick="copyLink(
+                        ${JSON.stringify(url)},
+                        this
+                    )"
+                >
+
+                    СКОПИРОВАТЬ ССЫЛКУ
+
+                </button>
+
+            </div>
+
+        `;
+
+    });
+
+
+    html += `
+
+            <button
+                class="secondary"
+                onclick="showHome()"
+            >
+
+                СОЗДАТЬ НОВУЮ ИГРУ
+
+            </button>
+
+        </div>
+
+    `;
+
+
+    document.getElementById("app").innerHTML = html;
+
+}
+
+
+/* =========================================================
+   КОПИРОВАНИЕ
+========================================================= */
+
+function copyLink(url, button) {
+
+    navigator.clipboard.writeText(url);
+
+    button.innerText =
+        "СКОПИРОВАНО ✓";
+
+
+    setTimeout(() => {
+
+        button.innerText =
+            "СКОПИРОВАТЬ ССЫЛКУ";
+
+    }, 2000);
+
+}
+
+
+/* =========================================================
+   ЭКРАН РОЛИ
+========================================================= */
+
+function showRole(data) {
+
+    const role =
+        ROLES[data.role];
+
+
+    document.getElementById("app").innerHTML = `
+
+        <div class="card">
+
+            <div class="role-screen">
+
+                <div class="player-number">
+
+                    ИГРОК ${data.player}
+
+                </div>
+
+
+                <div class="role-name">
+
+                    ${role.name}
+
+                </div>
+
+
+                <div class="role-description">
+
+                    ${role.description}
+
+                </div>
+
+
+                <button
+                    onclick="hideRole()"
+                    style="margin-top:30px"
+                >
+
+                    Я ЗАПОМНИЛ РОЛЬ
+
+                </button>
+
+
+                <div class="warning">
+
+                    Не показывайте этот экран
+                    другим игрокам.
+
+                    <br><br>
+
+                    Ваша роль — тайна.
+
+                </div>
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   СКРЫТИЕ РОЛИ
+========================================================= */
+
+function hideRole() {
+
+    document.getElementById("app").innerHTML = `
+
+        <div class="card">
+
+            <div class="hidden-role">
+
+                <h2>
+                    РОЛЬ СКРЫТА
+                </h2>
+
+
+                Теперь никто не должен
+                её увидеть.
+
+                <br><br>
+
+                Закройте страницу
+                или оставьте телефон у себя.
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   ПРОВЕРКА ССЫЛКИ
+========================================================= */
+
+function checkLink() {
+
+    const hash =
+        window.location.hash.substring(1);
+
+
+    if (!hash) {
+
+        showHome();
+
+        return;
+
+    }
+
+
+    const data =
+        decodeData(hash);
+
+
+    if (
+        data &&
+        data.role &&
+        ROLES[data.role]
+    ) {
+
+        showRole(data);
+
+    } else {
+
+        showHome();
+
+    }
+
+}
+
+
+/* =========================================================
+   ЗАПУСК
+========================================================= */
+
+checkLink();
+
+
+</script>
+
+</body>
+</html>
